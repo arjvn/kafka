@@ -1,4 +1,4 @@
-# Kafka Heartbeat Feature
+# Kafka Pipeline
 
 ## Overview
 

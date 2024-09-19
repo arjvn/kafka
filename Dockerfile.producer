@@ -1,0 +1,26 @@
+# Use an official Python runtime as a parent image
+FROM python:3.8-slim
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    libgl1 \
+    libsm6 \
+    libxext6 \
+    libxrender-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set the working directory
+WORKDIR /app
+
+# Copy the requirements file
+COPY requirements_producer.txt .
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements_producer.txt
+
+# Copy the producer script and video file
+COPY kafka_2.13-3.8.0/src/producer.py .
+COPY kafka_2.13-3.8.0/src/test1.mp4 .
+
+# Set the command to run the producer
+CMD ["python", "producer.py"]

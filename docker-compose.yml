@@ -40,7 +40,7 @@ services:
   consumer:
     build:
       context: .
-      dockerfile: Dockerfile.consumer
+      dockerfile: Dockerfile.consumer2
     depends_on:
       kafka:
         condition: service_healthy
@@ -50,3 +50,4 @@ services:
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
     volumes:
       - ./output:/app/output  # Map local 'output' directory to container
+    runtime: nvidia

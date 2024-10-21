@@ -41,6 +41,6 @@ while cap.isOpened():
     producer.flush()
 
     # Optional: Control frame rate
-    time.sleep(0.03)  # ~30 FPS
+    time.sleep(0.3)  # ~30 FPS
 
 cap.release()

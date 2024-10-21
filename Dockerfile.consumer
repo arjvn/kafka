@@ -1,8 +1,14 @@
-# Use an official Python runtime as a parent image
-FROM python:3.8-slim
+# Use CUDA devel image
+FROM nvidia/cuda:12.1.0-cudnn8-devel-ubuntu22.04
 
-# Install system dependencies
+# Install Python 3.10 and other dependencies
 RUN apt-get update && apt-get install -y \
+    python3.10 \
+    python3-pip \
+    build-essential \
+    cmake \
+    git \
+    wget \
     libgl1 \
     libglib2.0-0 \
     libsm6 \
@@ -10,20 +16,52 @@ RUN apt-get update && apt-get install -y \
     libxrender-dev \
     && rm -rf /var/lib/apt/lists/*
 
+# Create symbolic link for python
+RUN ln -sf /usr/bin/python3.10 /usr/bin/python
+
+# Set CUDA_HOME environment variable
+ENV CUDA_HOME=/usr/local/cuda
+
+# Install PyTorch with CUDA 12.1 support
+RUN pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+
+# Verify CUDA availability
+RUN python -c "import torch; print(torch.cuda.is_available())"
+
 # Set the working directory
 WORKDIR /app
 
-# Copy the requirements file
-COPY requirements_consumer.txt .
+# Install GroundingDINO
+RUN git clone https://github.com/IDEA-Research/GroundingDINO.git
+WORKDIR /app/GroundingDINO
 
-# Install Python dependencies
+# Install GroundingDINO with CUDA support
+RUN pip install -e .
+
+# Download pre-trained model weights
+RUN mkdir weights
+WORKDIR /app/GroundingDINO/weights
+RUN wget -q https://github.com/IDEA-Research/GroundingDINO/releases/download/v0.1.0-alpha/groundingdino_swint_ogc.pth
+
+# Return to /app
+WORKDIR /app
+
+# Copy requirements file and install other dependencies
+COPY requirements_consumer.txt .
 RUN pip install --no-cache-dir -r requirements_consumer.txt
 
-# Copy the consumer script
-COPY kafka_2.13-3.8.0/src/consumer.py .
+# Create the runner directory
+RUN mkdir -p /runner
+
+# Copy consumer.py and utils.py into /runner
+COPY kafka_2.13-3.8.0/src/consumer.py /runner/consumer.py
+COPY kafka_2.13-3.8.0/src/utils.py /runner/utils.py
 
 # Create the output directory
-RUN mkdir -p output
+RUN mkdir -p /runner/output
+
+# Set the working directory to /runner
+WORKDIR /runner
 
 # Set the command to run the consumer
 CMD ["python", "consumer.py"]
